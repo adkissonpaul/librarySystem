@@ -1,0 +1,105 @@
+<script src="../librarySystem/simpleTest.js"></script>
+<script>
+
+(function() {
+    
+    var libraryStorage = {};
+  
+    function librarySystem(libraryName, array, callback) {
+      
+      if(arguments.length === 1){
+        var currentLibrary = libraryStorage[libraryName];
+        var dependencyArray = [];
+  
+        if(currentLibrary.array.length > 0) {
+          
+          dependencyArray = currentLibrary.array.map(function(val) {
+            return libraryStorage[val].callback();
+          });
+  
+          if(currentLibrary.haveIrun === false) {
+            currentLibrary.haveIrun = true; 
+            return currentLibrary.value = currentLibrary.callback.apply(this, dependencyArray);
+          }                 
+        } else if(currentLibrary.haveIrun) {
+            return currentLibrary.value;
+        } else {
+            currentLibrary.haveIrun = true;
+            return currentLibrary.value = currentLibrary.callback();
+          }
+  
+      } else if (arguments.length > 1) {
+        libraryStorage[libraryName] = {
+          callback: callback,
+          array: array,
+          haveIrun: false
+        }
+      }
+    }
+  
+    window.librarySystem = librarySystem;
+  
+  })();
+
+tests({
+  'Function should run even if library has no dependencies.': function() {
+    librarySystem('name', [], function() {
+      return 'Paul';
+    });
+    libraryName = librarySystem('name');
+    eq(libraryName, 'Paul');
+  },
+  'Function should run once.': function() {
+    var counter = 0;
+    librarySystem('name', [], function() {
+      counter++
+      return 'Paul';
+    });
+    var libraryName = librarySystem('name');
+    librarySystem('name');
+    eq(libraryName, 'Paul');
+    eq(counter, 1);
+  },
+  'Function should provide value of callback (and run once) regardless of how many times it is called.': function() {
+    var counter = 0;
+    librarySystem('name', [], function() {
+      counter++
+      return 'Paul';
+    });
+    var libraryName = librarySystem('name');
+    var stillALibraryName = librarySystem('name');
+    var stillStillALibraryName = librarySystem('name');
+    eq(libraryName, 'Paul');
+    eq(stillALibraryName, 'Paul');
+    eq(stillStillALibraryName, 'Paul')
+    eq(counter, 1);
+  }, 
+  'Function should accept any number of dependencies.': function() {
+    librarySystem('person', [], function() {
+      return 'A person';
+    })
+    librarySystem('alive', ['person'], function(person) {
+      return person + ' is alive.';
+    })
+    var result = librarySystem('alive');
+    eq(result, 'A person is alive.')
+  },
+  'Function should accept libraries whose dependencies are out of order.': function() {
+    librarySystem('workBlurb', ['name', 'company'], function(name, company) {
+      return name + ' works at ' + company;
+    });
+
+    librarySystem('name', [], function() {
+      return 'Paul';
+    });
+
+    librarySystem('company', [], function() {
+      return 'Watch and Code';
+    });
+
+    var workBlurbOutput = librarySystem('workBlurb');
+    eq(workBlurbOutput, 'Paul works at Watch and Code')
+    },  
+});
+
+</script>
