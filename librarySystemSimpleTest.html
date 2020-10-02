@@ -49,7 +49,7 @@ tests({
     libraryName = librarySystem('name');
     eq(libraryName, 'Paul');
   },
-  'Function should run once.': function() {
+  'Function should run callback once.': function() {
     var counter = 0;
     librarySystem('name', [], function() {
       counter++
